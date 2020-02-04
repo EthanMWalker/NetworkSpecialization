@@ -724,7 +724,7 @@ class DirectedGraph:
     def network_vis(
             self, use_eqp=False, iter_matrix=False, spec_layout=False,
             lin=False, lin_dyn=None, title="Network Visualization",
-            save_img=False, filename='network_viz',show=True):
+            save_img=False, filename='network_viz', show=True):
         """
         Creates a visualization of the network G
         Parameters:
