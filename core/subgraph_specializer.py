@@ -2,6 +2,7 @@ import numpy as np
 import scipy.sparse as sp
 import scipy.linalg as la
 import matplotlib.pyplot as plt
+import autograd as ag
 
 class Graph:
     '''
@@ -25,10 +26,10 @@ class Graph:
 
     '''
 
-    def __init__(self, A, labels=None, F=None):
+    def __init__(self, A, labels=None, F=None, origin=None):
         '''
         Parameters:
-            A (ndarray)(n,n): The adjecency matrix to a directed graph
+            A (ndarray)(n,n): The adjacency matrix to a directed graph
                 where A[i,j] is the weight of the edge from node j to
                 node i
             labels (list(str)): labels for the nodes of the graph,
@@ -66,7 +67,10 @@ class Graph:
         self.indices = np.arange(n)
         self.labeler = dict(zip(np.arange(n), labels))
         self.indexer = dict(zip(labels, np.arange(n)))
-        self.origin = self.indexer.copy()
+        if origin:
+            self.origin = origin
+        else:
+            self.origin = self.indexer.copy()
         self.F = F
     
 
@@ -176,7 +180,7 @@ class Graph:
                 labels[copy_index] = self.labels[orig_index] + f'.{i+1}'
         
 
-        return Graph(S,labels)
+        return Graph(S,labels,self.F,self.origin)
     
     def original(self, i):
         """
@@ -242,7 +246,7 @@ class Graph:
 
     def iterate(
         self, iters, initial_condition,
-        graph=False, save_img=False, title=None):
+        graph=False, save=False, title=None):
         '''
         Model the dynamics on the network for iters timesteps given an
         initial condition
@@ -277,12 +281,12 @@ class Graph:
         if graph:
             domain = np.arange(iters)
             for i in range(self.n):
-                plt.plot(domain, t[:,i], label=self.labeler[i], lw=2)
+                plt.plot(domain, t[:,i], label=self.labeler[i], lw=1)
             plt.xlabel('Time')
             plt.ylabel('Node Value')
             plt.title('Network Dynamics')
             plt.legend()
-            if save_img:
+            if save:
                 plt.savefig(title)
             if graph:
                 plt.show()
@@ -309,3 +313,53 @@ class Graph:
             t[i] = self.A@t[i-1]
         
         return t
+
+    def stability_matrix(self):
+        """
+        Returns:
+            (ndarray): the stability matrix of the network where the i,j entry
+                is the supremum of the partial ith function with respect to
+                the jth argument, which is the derivative of the i,jth entry
+                of self.dynamics[1]
+        """
+
+        # extract the functions that determine the dynamics
+        Df = np.zeros((self.n,self.n))
+        domain = np.linspace(-10,10,50000)
+
+        # since the i,j entry of the stability matrix is the absolute
+        # supremum of the partial of the ith function with respect to
+        # the the jth variable we loop through the nxn Df matrix and
+        # look the the derivatives of the entries of the functional
+        # matrix
+        for i in range(self.n):
+            o_i = self.original(i)
+            for j in range(self.n):
+                o_j = self.original(j)
+
+                # since there is never an edge between nodes that share
+                # an origination we set this value to 0
+                if o_i == o_j:
+                    Df[i,j] = 0
+
+                # here we consider the edges between nodes
+                else:
+                    func = self.F[o_i,o_j]
+                    def _df(x): return -1.*ag.elementwise_grad(func)(x)
+                    _range = _df(domain)
+                    Df[i,j] = np.max(np.abs(_range))
+
+        return Df
+
+    def spectral_radius(self):
+        """
+        Returns:
+            (float): the spectral radius of the network based on the stability
+                matrix
+        """
+
+        Df = self.stability_matrix()
+        eigs = la.eig(Df)
+        # find the eigen value with largest modulus, which is the spectral
+        # radius
+        return np.max(np.abs(eigs[0]))
