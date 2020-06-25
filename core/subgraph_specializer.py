@@ -145,14 +145,6 @@ class Graph:
         num_copies = int(num_in * num_out)
         in_edges = np.argwhere(in_graph != 0)
         out_edges = np.argwhere(out_graph != 0)
-        
-
-        print(f'{in_graph.toarray()=}')
-        print(f'{out_graph.toarray()=}')
-        print(f'{num_copies=}')
-
-        print(self.A[:base_len,:][:,:base_len].toarray())
-        print(self.A[base_len:,:][:,base_len:].toarray())
 
         # create the new specialized matrix as a sparse diagonal matrix
         S = sp.block_diag(
@@ -283,8 +275,6 @@ class Graph:
             for i in range(1,iters):
                 t[i] = F(t[i-1])
             
-
-            
         if graph:
             domain = np.arange(iters)
             for i in range(self.n):
@@ -345,17 +335,10 @@ class Graph:
             for j in range(self.n):
                 o_j = self.original(j)
 
-                # since there is never an edge between nodes that share
-                # an origination we set this value to 0
-                if o_i == o_j:
-                    Df[i,j] = 0
-
-                # here we consider the edges between nodes
-                else:
-                    func = self.F[o_i,o_j]
-                    def _df(x): return -1.*ag.elementwise_grad(func)(x)
-                    _range = _df(domain)
-                    Df[i,j] = np.max(np.abs(_range))
+                func = self.F[o_i,o_j]
+                def _df(x): return -1.*ag.elementwise_grad(func)(x)
+                _range = _df(domain)
+                Df[i,j] = np.max(np.abs(_range))
 
         return Df
 
