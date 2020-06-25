@@ -121,7 +121,7 @@ class Graph:
             base = list(base)
         if len(base) > self.n:
             raise ValueError('base list is too long')
-
+        
         # permute A so that it is block diagonal with the base first
         spec_set = [i for i in self.indices if i not in base]
         permute = base + spec_set
@@ -134,7 +134,7 @@ class Graph:
 
         # rearrange the indices to put the base set first
         self.A = self.A[permute,:][:,permute]
-
+        
         # count the number of way into and out of the specialization set
         base_len = len(base)
         spec_len = len(spec_set)
@@ -145,7 +145,14 @@ class Graph:
         num_copies = int(num_in * num_out)
         in_edges = np.argwhere(in_graph != 0)
         out_edges = np.argwhere(out_graph != 0)
+        
 
+        print(f'{in_graph.toarray()=}')
+        print(f'{out_graph.toarray()=}')
+        print(f'{num_copies=}')
+
+        print(self.A[:base_len,:][:,:base_len].toarray())
+        print(self.A[base_len:,:][:,base_len:].toarray())
 
         # create the new specialized matrix as a sparse diagonal matrix
         S = sp.block_diag(
@@ -286,6 +293,7 @@ class Graph:
             plt.ylabel('Node Value')
             plt.title('Network Dynamics')
             plt.legend()
+            plt.tight_layout()
             if save:
                 plt.savefig(title)
             if graph:
