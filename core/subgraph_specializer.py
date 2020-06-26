@@ -199,49 +199,35 @@ class Graph:
         if temp_ind != -1:
             label = label[:temp_ind]
         return self.origin[label]
-    
-    def _set_dynamics(self):
-        '''
-        Create the matrix valued function that models the dynamics of
-        the network
 
-        Implicit Parameters:
-            self.F (mxm matrix valued function): this describes the
-                independent influence the jth node has on the ith node
-                it will use the format for the position i,j in the
-                matrix, node i receives from node j.
-                m is the original dimension of the network before growth
+    def dynamics(self,t0):
+        '''
+        Applies the function self.F to an initial state given by t0
+
+        Parameters:
+            t0 (ndarray): an initial state to iterate on
+        
         Returns:
-            F (n-dimensional vector valued function): this is a vector
-                valued function that takes in an ndarray of node states
-                and returns the state of the nodes at the next time step
+            t (ndarray): the next state determined by t = F(t0)
         '''
-
-        def create_component_function(i, o_i):
-            '''Returns the ith component function of the network'''
-
-            def compt_func(x):
-                n = self.n
-                return np.sum(
-                        [
-                        self.F[o_i,self.original(j)](x[j]) for j in range(n)
-                        ]
-                    )
-            return compt_func
 
         # initialize the output array
-        F = [None]*self.n
+        t = np.zeros_like(t0)
+
 
         for i in range(self.n):
             o_i = self.original(i)
-            # for each node we create a component function that works 
-            # much like matrix multiplication
-            F[i] = create_component_function(i, o_i)
+            for j,k in enumerate(t0):
+                o_j = self.original(j)
 
-        # return a vector valued function that can be used for iteration
-        def G(t):
-            return np.array([F[k](t) for k in range(self.n)])
-        return G
+                # since self.A records no self edges we need to separate
+                # these cases
+                if i == j:
+                    t[i] += self.F[o_i,o_j](t0[j])
+                else:
+                    t[i] += self.A[i,j]*self.F[o_i,o_j](t0[j])
+
+        return t
 
     def iterate(
         self, iters, initial_condition,
@@ -265,15 +251,13 @@ class Graph:
             t = self._linear_dynamics(iters, initial_condition)
         
         else:
-            F = self._set_dynamics()
-
             # initialize an array to be of length iters
             t = np.zeros((iters,self.n))
             # set the initial condition
             t[0] = initial_condition
 
             for i in range(1,iters):
-                t[i] = F(t[i-1])
+                t[i] = self.dynamics(t[i-1])
             
         if graph:
             domain = np.arange(iters)
