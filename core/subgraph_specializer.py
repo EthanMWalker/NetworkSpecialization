@@ -206,7 +206,6 @@ class Graph:
 
         Parameters:
             t0 (ndarray): an initial state to iterate on
-        
         Returns:
             t (ndarray): the next state determined by t = F(t0)
         '''
@@ -299,10 +298,10 @@ class Graph:
     def stability_matrix(self):
         """
         Returns:
-            (ndarray): the stability matrix of the network where the i,j entry
-                is the supremum of the partial ith function with respect to
-                the jth argument, which is the derivative of the i,jth entry
-                of self.dynamics[1]
+            (ndarray): the stability matrix of the network where the i,j
+                entry is the supremum of the partial ith function with
+                respect to the jth argument, which is the derivative of
+                the i,jth entry of self.dynamics[1]
         """
 
         # extract the functions that determine the dynamics
@@ -329,12 +328,11 @@ class Graph:
     def spectral_radius(self):
         """
         Returns:
-            (float): the spectral radius of the network based on the stability
-                matrix
+            (float): the spectral radius of the network based on the
+                stability matrix
         """
 
         Df = self.stability_matrix()
         eigs = la.eig(Df)
-        # find the eigen value with largest modulus, which is the spectral
-        # radius
+        # find the eigenvalue with largest modulus, which is the
         return np.max(np.abs(eigs[0]))
