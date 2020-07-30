@@ -55,7 +55,8 @@ class Graph:
             len(labels) != n or
             type(labels[0]) != type(str())
             ):
-            raise ValueError('labels must be a string list of length n')
+            print(len(labels))
+            raise ValueError(f'labels must be a string list of length {n}')
 
         # save A as a csr_matrix
         if sp.isspmatrix_csr(A):
